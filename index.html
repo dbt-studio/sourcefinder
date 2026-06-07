@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>sourcefinder / soufi</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0b1020;
+      color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      padding: 1.5rem 2rem;
+      background: #11162a;
+      border-bottom: 1px solid #222842;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+    .tagline {
+      font-size: 0.9rem;
+      color: #a0a6c5;
+    }
+    main {
+      flex: 1;
+      padding: 1.5rem 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    label {
+      font-size: 0.9rem;
+      color: #c3c7e6;
+    }
+    .row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    input[type="text"] {
+      flex: 1;
+      min-width: 220px;
+      padding: 0.6rem 0.8rem;
+      border-radius: 6px;
+      border: 1px solid #303654;
+      background: #0f1426;
+      color: #f5f5f5;
+    }
+    button {
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      border: none;
+      background: #4f7cff;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .status {
+      font-size: 0.85rem;
+      color: #a0a6c5;
+      min-height: 1.2em;
+      margin-bottom: 0.5rem;
+    }
+    textarea {
+      width: 100%;
+      min-height: 380px;
+      padding: 0.8rem;
+      border-radius: 6px;
+      border: 1px solid #303654;
+      background: #050816;
+      color: #e5e9ff;
+      font-family: "Fira Code", monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+      box-sizing: border-box;
+      white-space: pre;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+      font-size: 0.8rem;
+      color: #a0a6c5;
+    }
+    .link {
+      color: #4f7cff;
+      text-decoration: none;
+      font-size: 0.8rem;
+    }
+    .link:hover {
+      text-decoration: underline;
+    }
+    footer {
+      padding: 0.8rem 2rem;
+      font-size: 0.75rem;
+      color: #7b80a0;
+      border-top: 1px solid #222842;
+      background: #0b1020;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>sourcefinder / soufi</h1>
+    <div class="tagline">Minimal web tool to inspect page source (HTML) from a given URL.</div>
+  </header>
+
+  <main>
+    <label for="urlInput">Enter URL (e.g. https://example.com)</label>
+    <div class="row">
+      <input id="urlInput" type="text" placeholder="https://example.com" />
+      <button id="fetchBtn">Fetch source</button>
+    </div>
+    <div class="status" id="status"></div>
+
+    <div class="toolbar">
+      <span>HTML source</span>
+      <button id="copyBtn">Copy to clipboard</button>
+    </div>
+    <textarea id="sourceArea" readonly placeholder="Source code will appear here..."></textarea>
+  </main>
+
+  <footer>
+    sourcefinder / soufi – client demo.  
+    Real fetching of other domains must be done on your own server (no CORS bypass in pure HTML/JS).
+  </footer>
+
+  <script>
+    const urlInput = document.getElementById('urlInput');
+    const fetchBtn = document.getElementById('fetchBtn');
+    const statusEl = document.getElementById('status');
+    const sourceArea = document.getElementById('sourceArea');
+    const copyBtn = document.getElementById('copyBtn');
+
+    function setStatus(msg, isError = false) {
+      statusEl.textContent = msg || '';
+      statusEl.style.color = isError ? '#ff7b7b' : '#a0a6c5';
+    }
+
+    fetchBtn.addEventListener('click', async () => {
+      const url = urlInput.value.trim();
+      if (!url) {
+        setStatus('Please enter a URL.', true);
+        return;
+      }
+
+      setStatus('Fetching source from server-side API...', false);
+      fetchBtn.disabled = true;
+      sourceArea.value = '';
+
+      try {
+        // IMPORTANT:
+        // This assumes you have a backend endpoint like:
+        //   GET /api/fetch?url=<encoded URL>
+        // which returns the HTML as plain text.
+        const apiUrl = '/api/fetch?url=' + encodeURIComponent(url);
+
+        const res = await fetch(apiUrl);
+        if (!res.ok) {
+          throw new Error('Server responded with status ' + res.status);
+        }
+
+        const text = await res.text();
+        sourceArea.value = text;
+        setStatus('Source loaded successfully.');
+      } catch (err) {
+        console.error(err);
+        setStatus('Error fetching source: ' + err.message, true);
+      } finally {
+        fetchBtn.disabled = false;
+      }
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      const text = sourceArea.value;
+      if (!text) {
+        setStatus('Nothing to copy.', true);
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus('Source copied to clipboard.');
+      } catch (err) {
+        console.error(err);
+        setStatus('Could not copy to clipboard: ' + err.message, true);
+      }
+    });
+  </script>
+</body>
+</html>
