@@ -1,2 +1,4 @@
 # sourcefinder
 Type the Domain Get the Code directly without searching it 10 minutes!
+Please open the index.html and copy it!
+Wir haften nicht!!!!!
